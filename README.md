@@ -26,7 +26,7 @@ MVP deliberately uses **only C-Chain + USDC**. ICTT/eERC are real Avalanche-nati
 kept on the roadmap, not speculatively built. (`ponytail`: add when a second L1 or a privacy
 ask actually shows up.)
 
-**Live demo:** https://dashboard-hudas-projects-a8e7f558.vercel.app · **Repo:** https://github.com/PugarHuda/bagi
+**Live demo:** https://bagi-tips.vercel.app · **Repo:** https://github.com/PugarHuda/bagi
 
 ## Live on Fuji (deployed + verified)
 

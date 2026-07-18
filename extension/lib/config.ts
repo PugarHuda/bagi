@@ -23,7 +23,7 @@ export const ADDRESSES = {
 
 export const DASHBOARD_URL =
   process.env.PLASMO_PUBLIC_DASHBOARD_URL ??
-  "https://dashboard-hudas-projects-a8e7f558.vercel.app";
+  "https://bagi-tips.vercel.app";
 
 export const TIP_PRESETS = [1, 5, 10, 25] as const;
 
