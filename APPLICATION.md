@@ -4,12 +4,10 @@
 > Everything below is already true and verifiable — contracts are live and verified on Fuji today.
 >
 > **Before submitting, fill the remaining `‹…›`:**
-> - Builder name + one-line bio (the "Why us" section)
-> - Contact: email / Telegram / X handle
 > - Traction: names of the first creator teams you'll onboard + target numbers (tips, USDC)
-> - Hosted dashboard URL (see `DEPLOY.md` step 2)
 >
-> Already filled: repo, contract addresses, milestones, funding split ($3K/$4K/$3K = $10K).
+> Already filled: repo, live demo, contract addresses, builder + contact (@BangDropID),
+> milestones, funding split ($3K/$4K/$3K = $10K).
 
 ---
 
@@ -75,8 +73,8 @@ tipping app (extension + dashboard + contracts + subgraph) we already shipped on
 learning the shape of this product on the grant's dime — we've built it once and are re-pointing
 a proven architecture at Avalanche, with **auto-split** as the new core primitive.
 
-- Builder: ‹name› — ‹1 line: what you've shipped, links›
-- GitHub: github.com/PugarHuda · Contact: ‹email / TG / X handle›
+- Builder: **@BangDropID** — shipped `nih` (Bitcoin-backed tipping on Mezo: extension + dashboard + contracts + subgraph), now building Bagi on Avalanche.
+- GitHub: github.com/PugarHuda · X: [@BangDropID](https://x.com/BangDropID) · Telegram: lynx129 · Email: hudapugar@gmail.com
 
 ## Traction plan (the part that actually wins this grant)
 
