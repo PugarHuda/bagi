@@ -167,6 +167,18 @@ const $ = id => document.getElementById(id);
 const say = (msg, cls="") => { const s=$("status"); s.textContent=msg; s.className=cls; };
 const fmt = v => ethers.formatUnits(v, USDC_DECIMALS);
 
+// Real profile pics with zero API keys (github serves .png; unavatar proxies the rest).
+// onerror removes a broken img so the label text stands alone. (idea: nih handle-utils)
+function avatarUrl(platform, username) {
+  if (platform === "github") return `https://github.com/${encodeURIComponent(username)}.png?size=48`;
+  if (platform === "twitter" || platform === "youtube") return `https://unavatar.io/${platform}/${encodeURIComponent(username)}`;
+  return `https://unavatar.io/${encodeURIComponent(username)}`;
+}
+function avatarImg(platform, username, size = 20) {
+  return `<img src="${avatarUrl(platform, username)}" width="${size}" height="${size}" alt="" onerror="this.remove()"
+    style="border-radius:99px;vertical-align:middle;margin-right:6px;background:#2b3446;object-fit:cover">`;
+}
+
 // ---- split parsing (mirrors the contract's rules so we fail before gas) ----
 function parseSplit(text) {
   const rows = text.split("\n").map(l => l.trim()).filter(Boolean);
@@ -224,7 +236,7 @@ async function resolveFromUrl() {
     } else {
       $("tipCreator").value = addr;
       banner.className = "hint ok";
-      banner.textContent = `Tipping @${username} (${platform}) → ${addr.slice(0,10)}…`;
+      banner.innerHTML = `${avatarImg(platform, username, 22)}Tipping <b>@${username}</b> (${platform}) → ${addr.slice(0,10)}…`;
     }
   } catch (e) { banner.className = "hint err"; banner.textContent = err(e); }
 }
@@ -306,7 +318,10 @@ async function gql(query) {
 const short = a => a.slice(0, 6) + "…" + a.slice(-4);
 // Our subgraph indexes Handle{platform,username} per wallet, so we label leaders directly —
 // no handleId→handle inversion hack (nih needed one because its schema only stored the hash).
-const label = acc => acc.handles && acc.handles.length ? "@" + acc.handles[0].username : short(acc.id);
+const label = acc => {
+  const h = acc.handles && acc.handles[0];
+  return h ? avatarImg(h.platform, h.username) + "@" + h.username : short(acc.id);
+};
 
 async function loadCommunity() {
   if (!SUBGRAPH_URL) return; // cards stay hidden until an endpoint is set
@@ -317,17 +332,16 @@ async function loadCommunity() {
     creators: accounts(first: 8, orderBy: totalReceived, orderDirection: desc, where: {totalReceived_gt: "0"}) {
       id totalReceived tipsReceived handles { platform username } }
     tips(first: 12, orderBy: timestamp, orderDirection: desc) {
-      from { id handles { username } } creator { id handles { username } } amount memo timestamp txHash }
+      from { id handles { platform username } } creator { id handles { platform username } } amount memo timestamp txHash }
   }`);
   if (!data) { $("community").innerHTML = `<h2>Community</h2><p class="hint err">Subgraph unreachable at <code>${SUBGRAPH_URL}</code>.</p>`; return; }
   const row = (l, r) => `<div class="stat"><span>${l}</span><b>${r}</b></div>`;
+  const who = acc => { const h = acc.handles && acc.handles[0]; return h ? avatarImg(h.platform, h.username) + "@" + h.username : short(acc.id); };
   const tippers = data.tippers.map(a => row(`${tierFor(Number(fmt(a.totalSent)))?.emoji || ""} ${label(a)}`, fmt(a.totalSent) + " USDC")).join("") || `<p class="hint">no tips yet</p>`;
   const creators = data.creators.map(a => row(label(a), fmt(a.totalReceived) + " USDC")).join("") || `<p class="hint">no tips yet</p>`;
-  const feed = data.tips.map(t => {
-    const from = t.from.handles?.[0] ? "@" + t.from.handles[0].username : short(t.from.id);
-    const to = t.creator.handles?.[0] ? "@" + t.creator.handles[0].username : short(t.creator.id);
-    return `<div class="stat"><span>${from} → ${to}${t.memo ? ` · <i>${t.memo}</i>` : ""}</span><b>${fmt(t.amount)} USDC</b></div>`;
-  }).join("") || `<p class="hint">no tips yet</p>`;
+  const feed = data.tips.map(t =>
+    `<div class="stat"><span>${who(t.from)} → ${who(t.creator)}${t.memo ? ` · <i>${t.memo}</i>` : ""}</span><b>${fmt(t.amount)} USDC</b></div>`
+  ).join("") || `<p class="hint">no tips yet</p>`;
   $("lbTippers").innerHTML = tippers;
   $("lbCreators").innerHTML = creators;
   $("feed").innerHTML = feed;

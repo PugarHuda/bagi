@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bagi — pitch deck</title>
+<style>
+  :root{
+    --bg:#0b0d12; --card:#12151d; --line:#242b39; --fg:#eef2f8; --mut:#98a2b6;
+    --acc:#e84142; --acc2:#3ddc84; --avax:#e84142;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);color:var(--fg);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    overflow:hidden;
+  }
+  #deck{height:100dvh;width:100vw;position:relative}
+  .slide{
+    position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;
+    padding:6vh 8vw;max-width:1100px;margin:0 auto;
+    animation:fade .35s ease;
+  }
+  .slide.on{display:flex}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  h1{font-size:clamp(34px,6vw,68px);line-height:1.03;letter-spacing:-.02em;font-weight:800}
+  h1 .dot{color:var(--acc)}
+  h2{font-size:clamp(24px,3.4vw,40px);line-height:1.1;letter-spacing:-.01em;margin-bottom:22px;font-weight:750}
+  .kicker{color:var(--acc);font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:13px;margin-bottom:18px}
+  p.lead{font-size:clamp(18px,2.2vw,26px);color:var(--fg);max-width:820px}
+  p.sub{color:var(--mut);font-size:clamp(15px,1.7vw,19px);margin-top:16px;max-width:760px}
+  ul{list-style:none;margin-top:10px;display:flex;flex-direction:column;gap:14px;max-width:840px}
+  li{display:flex;gap:14px;align-items:flex-start;font-size:clamp(15px,1.8vw,20px)}
+  li b{color:var(--fg)}
+  li .m{color:var(--mut)}
+  .tick{color:var(--acc2);flex:0 0 auto;font-weight:800}
+  .arw{color:var(--acc);flex:0 0 auto;font-weight:800}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+  .cardbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+  .cardbox h3{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin-bottom:8px;font-weight:700}
+  .cardbox .big{font-size:clamp(20px,2.4vw,30px);font-weight:750;letter-spacing:-.01em}
+  .cardbox .tag{display:inline-block;margin-top:8px;font-size:12px;color:var(--acc2);border:1px solid var(--line);border-radius:99px;padding:2px 10px}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:8px}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .step .n{font-size:13px;color:var(--acc);font-weight:800;letter-spacing:.1em}
+  .step .t{font-size:clamp(17px,2vw,22px);font-weight:700;margin:8px 0 6px}
+  .step .d{color:var(--mut);font-size:15px}
+  code{font-family:ui-monospace,"SF Mono",Menlo,monospace;background:#1b2230;border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:.88em;color:#cdd6e6}
+  .ask{display:flex;gap:16px;margin-top:20px;flex-wrap:wrap}
+  .mile{flex:1 1 220px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .mile .amt{font-size:clamp(24px,3vw,36px);font-weight:800;color:var(--acc)}
+  .mile .lbl{font-weight:700;margin:4px 0 6px}
+  .mile .d{color:var(--mut);font-size:14px}
+  .links{display:flex;flex-wrap:wrap;gap:12px 26px;margin-top:26px;font-size:clamp(15px,1.8vw,19px)}
+  .links a{color:var(--fg);text-decoration:none;border-bottom:2px solid var(--acc)}
+  .links a:hover{color:var(--acc)}
+  .foot{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between;
+    padding:14px 22px;color:var(--mut);font-size:13px;pointer-events:none}
+  .dots{display:flex;gap:8px;pointer-events:auto}
+  .dots button{width:9px;height:9px;border-radius:99px;border:0;background:#2b3446;cursor:pointer;padding:0}
+  .dots button.on{background:var(--acc);width:22px}
+  .nav{pointer-events:auto;display:flex;gap:8px}
+  .nav button{background:var(--card);border:1px solid var(--line);color:var(--fg);border-radius:8px;
+    width:34px;height:30px;cursor:pointer;font-size:15px}
+  .brand{font-weight:800}.brand .dot{color:var(--acc)}
+  @media(max-width:720px){
+    .grid,.steps{grid-template-columns:1fr}
+    .slide{padding:8vh 7vw}
+  }
+</style>
+</head>
+<body>
+<div id="deck">
+
+  <section class="slide">
+    <div class="kicker">Avalanche · Team1 Mini Grant</div>
+    <h1>Bagi<span class="dot">.</span><br>A tip jar that<br>splits itself.</h1>
+    <p class="sub">Trustless USDC tip-splitting on Avalanche C-Chain. The split is enforced on-chain — nobody has to trust a payout admin.</p>
+    <div class="links">
+      <a href="https://bagi-tips.vercel.app" target="_blank">Live demo</a>
+      <a href="https://github.com/PugarHuda/bagi" target="_blank">GitHub</a>
+      <span style="color:var(--mut)">by @BangDropID</span>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="kicker">The problem</div>
+    <h2>Tips pay one wallet.<br>The split is a promise.</h2>
+    <p class="lead">TipeeeStream, StreamElements & co. pay <b>one</b> account — then someone is trusted to manually divide it among the team, mods, and collaborators.</p>
+    <p class="sub">Teams, mod squads, and collab channels get burned by this constantly. There's no neutral referee — just trust that the money gets shared fairly.</p>
+  </section>
+
+  <section class="slide">
+    <div class="kicker">The solution</div>
+    <h2>Make the split a property<br>of the address you tip.</h2>
+    <ul>
+      <li><span class="tick">✓</span><span><b>On-chain enforcement.</b> <span class="m">A creator registers a split in basis points; every tip auto-routes to each recipient. No payout admin, no trust.</span></span></li>
+      <li><span class="tick">✓</span><span><b>Tip by handle, not by hex.</b> <span class="m">Bind <code>twitter:name</code> → wallet; a browser extension adds a “Split-tip” button on social profiles.</span></span></li>
+      <li><span class="tick">✓</span><span><b>Micro-tips that make sense.</b> <span class="m">Avalanche C-Chain fees are low enough that a $1 tip doesn't cost $1 to route.</span></span></li>
+    </ul>
+  </section>
+
+  <section class="slide">
+    <div class="kicker">How it works</div>
+    <h2>Three calls. No middleman.</h2>
+    <div class="steps">
+      <div class="step"><div class="n">01</div><div class="t">setSplit</div><div class="d">Creator sets recipients + basis-point shares (must sum to 100%, ≤20 recipients).</div></div>
+      <div class="step"><div class="n">02</div><div class="t">tip</div><div class="d">Anyone tips USDC. Contract takes a ≤1% fee and credits each recipient their exact share — last one absorbs rounding, zero dust lost.</div></div>
+      <div class="step"><div class="n">03</div><div class="t">withdraw</div><div class="d">Pull-based payout. One reverting recipient can't brick anyone else's money.</div></div>
+    </div>
+    <p class="sub">A separate <b>HandleRegistry</b> maps social handles to wallets, so the extension can resolve <code>@name</code> → address and route through their split.</p>
+  </section>
+
+  <section class="slide">
+    <div class="kicker">Why Avalanche — honestly</div>
+    <h2>Which primitives are load-bearing.</h2>
+    <div class="grid">
+      <div class="cardbox"><h3>C-Chain</h3><div class="big">Low, predictable fees</div><span class="tag">✓ live</span></div>
+      <div class="cardbox"><h3>Native USDC</h3><div class="big">Stable, no bridge risk</div><span class="tag">✓ live</span></div>
+      <div class="cardbox"><h3>ICTT</h3><div class="big">Cross-L1 tips → one split</div><span class="tag" style="color:var(--mut)">🗺 roadmap</span></div>
+      <div class="cardbox"><h3>eERC</h3><div class="big">Confidential splits</div><span class="tag" style="color:var(--mut)">🗺 roadmap</span></div>
+    </div>
+    <p class="sub">MVP ships <b>only</b> C-Chain + USDC. ICTT/eERC are real upgrades kept as honest roadmap skeletons — built when a second-L1 tipper or a privacy ask actually shows up, not for the buzzword.</p>
+  </section>
+
+  <section class="slide">
+    <div class="kicker">What's built — verifiable today</div>
+    <h2>Not a deck of promises.</h2>
+    <ul>
+      <li><span class="tick">✓</span><span><b>2 contracts live + verified on Fuji, 18/18 tests.</b> <span class="m">Bagi splitter <code>0xDea6…209d</code> · HandleRegistry <code>0x481f…7d87</code></span></span></li>
+      <li><span class="tick">✓</span><span><b>Working dashboard.</b> <span class="m">Set split · tip · withdraw · supporter tier · claim handle · leaderboard.</span></span></li>
+      <li><span class="tick">✓</span><span><b>Browser extension.</b> <span class="m">“Split-tip USDC” button on Twitter/X, GitHub, YouTube, LinkedIn.</span></span></li>
+      <li><span class="tick">✓</span><span><b>Subgraph.</b> <span class="m">Indexes tips + handle bindings → leaderboard, activity feed, handle directory.</span></span></li>
+    </ul>
+  </section>
+
+  <section class="slide">
+    <div class="kicker">Traction plan — how this grant is won</div>
+    <h2>Community first, in parallel with shipping.</h2>
+    <ul>
+      <li><span class="arw">→</span><span><b>Weeks 1–2:</b> <span class="m">mainnet C-Chain deploy; onboard the first creator teams we already know.</span></span></li>
+      <li><span class="arw">→</span><span><b>Weeks 2–4:</b> <span class="m">daily presence in Team1 Discord + build-in-public on X — one demo clip per feature.</span></span></li>
+      <li><span class="arw">→</span><span><b>Weeks 4–6:</b> <span class="m">first real tips through live splits; publish the leaderboard as social proof.</span></span></li>
+    </ul>
+    <p class="sub">Reported metric: <b>distinct splits created</b> and <b>total USDC routed</b> — both on-chain, independently verifiable.</p>
+  </section>
+
+  <section class="slide">
+    <div class="kicker">The ask</div>
+    <h2>$10,000 · three milestones.</h2>
+    <div class="ask">
+      <div class="mile"><div class="amt">$3K</div><div class="lbl">M1 — Mainnet</div><div class="d">Bagi + HandleRegistry deployed & verified on C-Chain mainnet.</div></div>
+      <div class="mile"><div class="amt">$4K</div><div class="lbl">M2 — First users</div><div class="d">Creator teams onboarded; extension on Chrome Web Store; first real tips routed.</div></div>
+      <div class="mile"><div class="amt">$3K</div><div class="lbl">M3 — Traction</div><div class="d">Public leaderboard; USDC-routed report; build-in-public writeup + demo video.</div></div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <h1>Split tips,<br>trustlessly<span class="dot">.</span></h1>
+    <div class="links">
+      <a href="https://bagi-tips.vercel.app" target="_blank">bagi-tips.vercel.app</a>
+      <a href="https://github.com/PugarHuda/bagi" target="_blank">github.com/PugarHuda/bagi</a>
+      <a href="https://testnet.snowtrace.io/address/0xDea6Da93265871d828B20cace2BADd5F5e70209d" target="_blank">Contract (Snowtrace)</a>
+      <a href="https://x.com/BangDropID" target="_blank">@BangDropID</a>
+    </div>
+    <p class="sub">Bagi — Indonesian for “split / share out.” Built on Avalanche.</p>
+  </section>
+
+</div>
+
+<div class="foot">
+  <span class="brand">Bagi<span class="dot">.</span></span>
+  <div class="dots" id="dots"></div>
+  <div class="nav"><button id="prev" aria-label="previous">‹</button><button id="next" aria-label="next">›</button></div>
+</div>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  const dotsWrap = document.getElementById('dots');
+  let i = 0;
+  slides.forEach((_, n) => {
+    const b = document.createElement('button');
+    b.onclick = () => go(n);
+    dotsWrap.appendChild(b);
+  });
+  const dots = [...dotsWrap.children];
+  function go(n){
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, n2) => s.classList.toggle('on', n2 === i));
+    dots.forEach((d, n2) => d.classList.toggle('on', n2 === i));
+    location.hash = i ? 's' + (i + 1) : '';
+  }
+  document.getElementById('next').onclick = () => go(i + 1);
+  document.getElementById('prev').onclick = () => go(i - 1);
+  addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); go(i + 1); }
+    if (e.key === 'ArrowLeft'  || e.key === 'PageUp') { e.preventDefault(); go(i - 1); }
+    if (e.key === 'Home') go(0);
+    if (e.key === 'End') go(slides.length - 1);
+  });
+  // swipe
+  let x0 = null;
+  addEventListener('touchstart', e => x0 = e.touches[0].clientX, {passive:true});
+  addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 50) go(i + (dx < 0 ? 1 : -1));
+    x0 = null;
+  }, {passive:true});
+  // deep link ?s=3 / #s3
+  const m = (location.hash.match(/s(\d+)/) || [])[1];
+  go(m ? (+m - 1) : 0);
+</script>
+</body>
+</html>
