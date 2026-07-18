@@ -108,6 +108,6 @@ onboarding incentives (small tip-matching to bootstrap the first splits).
 ## Links
 
 - Repo: https://github.com/PugarHuda/bagi
-- Live dashboard demo: ‹URL once hosted — see DEPLOY.md step 2›
+- Live dashboard demo: https://dashboard-hudas-projects-a8e7f558.vercel.app
 - Contracts (verified on Snowtrace): see addresses above
 - Prior work (nih): https://github.com/PugarHuda/nih
