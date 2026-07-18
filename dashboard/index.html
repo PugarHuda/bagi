@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bagi — split tips on Avalanche</title>
+<!-- ponytail: single static file, no build. ethers UMD from CDN, MetaMask for signing.
+     Full nih-style dashboard/extension/subgraph deferred; add when a demo needs more than one page. -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<style>
+  :root { color-scheme: dark; --bg:#0d0f14; --card:#161a22; --line:#262c38; --fg:#e7ebf2; --mut:#8b95a7; --acc:#e84142; --ok:#3ddc84; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui,sans-serif; }
+  main { max-width:720px; margin:0 auto; padding:24px 16px 64px; }
+  h1 { font-size:26px; margin:0 0 2px; }
+  h1 .r { color:var(--acc); }
+  .sub { color:var(--mut); margin:0 0 20px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin:12px 0; }
+  .card h2 { font-size:14px; text-transform:uppercase; letter-spacing:.05em; color:var(--mut); margin:0 0 12px; }
+  label { display:block; font-size:13px; color:var(--mut); margin:8px 0 4px; }
+  input, textarea { width:100%; background:var(--bg); border:1px solid var(--line); color:var(--fg); border-radius:8px; padding:9px 11px; font:inherit; }
+  textarea { resize:vertical; min-height:64px; font-family:ui-monospace,monospace; font-size:13px; }
+  button { background:var(--acc); color:#fff; border:0; border-radius:8px; padding:10px 16px; font:inherit; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  button.ghost { background:transparent; border:1px solid var(--line); color:var(--fg); }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .row > * { flex:0 0 auto; }
+  .grow { flex:1 1 140px; }
+  .stat { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--line); }
+  .stat:last-child { border:0; }
+  .stat b { font-variant-numeric:tabular-nums; }
+  code { font-family:ui-monospace,monospace; font-size:12px; color:var(--mut); word-break:break-all; }
+  #status { min-height:20px; font-size:13px; color:var(--mut); margin-top:8px; }
+  #status.err { color:var(--acc); }
+  #status.ok { color:var(--ok); }
+  .hint { font-size:12px; color:var(--mut); margin-top:6px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Bagi<span class="r">.</span></h1>
+  <p class="sub">A tip jar that splits itself — USDC on Avalanche C-Chain, split enforced on-chain.</p>
+
+  <div class="card">
+    <div class="row">
+      <button id="connect">Connect wallet</button>
+      <span id="acct" class="grow"><code>not connected</code></span>
+    </div>
+    <div class="hint">Network: Avalanche Fuji testnet. Contract: <code id="addr"></code></div>
+  </div>
+
+  <div class="card">
+    <h2>1 · Set your split</h2>
+    <p class="hint">One <code>address,bps</code> per line. Basis points must sum to 10000 (100%).</p>
+    <textarea id="split" placeholder="0xRecipientA,7000&#10;0xRecipientB,3000"></textarea>
+    <div class="row" style="margin-top:10px"><button id="setSplit">Set split</button></div>
+  </div>
+
+  <div class="card">
+    <h2>2 · Tip a creator</h2>
+    <div id="resolveBanner" class="hint" style="display:none"></div>
+    <label>Creator address</label>
+    <input id="tipCreator" placeholder="0x… (a creator who has set a split)" />
+    <div class="row">
+      <div class="grow"><label>Amount (USDC)</label><input id="tipAmt" type="number" min="0" step="0.01" placeholder="5.00" /></div>
+    </div>
+    <label>Memo (optional)</label>
+    <input id="tipMemo" placeholder="gg!" />
+    <div class="row" style="margin-top:10px"><button id="tip">Approve &amp; tip</button></div>
+    <div class="hint">First tip triggers a one-time USDC approval, then the tip transaction.</div>
+  </div>
+
+  <div class="card">
+    <h2>3 · Stats &amp; withdraw</h2>
+    <div class="row">
+      <input id="lookup" class="grow" placeholder="address to look up (blank = your wallet)" />
+      <button class="ghost" id="refresh">Look up</button>
+    </div>
+    <div id="stats" style="margin-top:12px">
+      <div class="stat"><span>Received (tippedIn)</span><b id="sIn">—</b></div>
+      <div class="stat"><span>Sent (tippedOut)</span><b id="sOut">—</b></div>
+      <div class="stat"><span>Withdrawable (earned)</span><b id="sEarned">—</b></div>
+      <div class="stat"><span>Supporter tier</span><b id="sTier">—</b></div>
+      <div class="stat"><span>Split</span><b id="sSplit">—</b></div>
+    </div>
+    <div class="row" style="margin-top:10px"><button id="withdraw">Withdraw my USDC</button></div>
+    <p class="hint">A ranked cross-user leaderboard is served by the subgraph (see <code>/subgraph</code>). This reads any single address's on-chain stats directly, no indexer needed.</p>
+  </div>
+
+  <div class="card">
+    <h2>4 · Claim your handle</h2>
+    <p class="hint">Bind a social handle to your wallet so people can tip you by name from the browser extension — no need to share a <code>0x…</code>.</p>
+    <div class="row">
+      <input id="bindPlatform" placeholder="twitter" style="flex:0 0 120px" />
+      <input id="bindUsername" class="grow" placeholder="your_handle" />
+      <button id="bind">Claim</button>
+    </div>
+  </div>
+
+  <div class="card" id="community" style="display:none">
+    <h2>Community</h2>
+    <div class="row" style="gap:16px; align-items:flex-start">
+      <div class="grow">
+        <div class="hint" style="margin-bottom:4px">Top supporters</div>
+        <div id="lbTippers"></div>
+      </div>
+      <div class="grow">
+        <div class="hint" style="margin-bottom:4px">Top creators</div>
+        <div id="lbCreators"></div>
+      </div>
+    </div>
+    <div class="hint" style="margin:12px 0 4px">Recent tips</div>
+    <div id="feed"></div>
+  </div>
+
+  <div id="status"></div>
+</main>
+
+<script>
+// ---- config ---------------------------------------------------------------
+// Deployed on Fuji. Override via localStorage.setItem('bagi_addr', '0x…') for a redeploy.
+const BAGI_ADDR = window.localStorage.getItem("bagi_addr") || "0xDea6Da93265871d828B20cace2BADd5F5e70209d";
+const REGISTRY_ADDR = window.localStorage.getItem("registry_addr") || "0x481fE34ed995603abdB9998b7eCc8811e2707d87";
+const USDC_ADDR = "0x5425890298aed601595a70AB815c96711a31Bc65"; // native USDC, Fuji
+const FUJI = { chainId: "0xa869", chainName: "Avalanche Fuji", nativeCurrency:{name:"AVAX",symbol:"AVAX",decimals:18},
+  rpcUrls:["https://api.avax-test.network/ext/bc/C/rpc"], blockExplorerUrls:["https://testnet.snowtrace.io"] };
+const USDC_DECIMALS = 6;
+
+const BAGI_ABI = [
+  "function setSplit(address[] recipients, uint16[] bps)",
+  "function tip(address creator, uint256 amount, string memo)",
+  "function withdraw()",
+  "function getSplit(address creator) view returns (address[], uint16[])",
+  "function earned(address) view returns (uint256)",
+  "function tippedIn(address) view returns (uint256)",
+  "function tippedOut(address) view returns (uint256)",
+];
+const ERC20_ABI = [
+  "function approve(address spender, uint256 value) returns (bool)",
+  "function allowance(address owner, address spender) view returns (uint256)",
+];
+const REGISTRY_ABI = [
+  "function resolve(string platform, string username) view returns (address)",
+  "function bind(string platform, string username)",
+  "function unbind(string platform, string username)",
+];
+
+// Subgraph endpoint powers leaderboard + activity feed. Unset → those cards stay hidden.
+// Set once deployed: localStorage.setItem('bagi_subgraph', 'https://api.goldsky.com/.../bagi/v1/gn')
+const SUBGRAPH_URL = window.localStorage.getItem("bagi_subgraph") || "";
+
+// Supporter tiers — pure function of lifetime USDC tipped (Bagi.tippedOut). Ported from nih:
+// on-chain reputation for tippers, no new contract, no minted token. (nih used 18-dec MUSD;
+// here USDC is 6-dec and we compute from the whole-USDC number.)
+const TIERS = [
+  { name: "Diamond", emoji: "💎", min: 500 },
+  { name: "Gold", emoji: "🥇", min: 100 },
+  { name: "Silver", emoji: "🥈", min: 25 },
+  { name: "Bronze", emoji: "🥉", min: 1 },
+];
+const tierFor = usdc => TIERS.find(t => usdc >= t.min) || null;
+
+document.getElementById("addr").textContent = BAGI_ADDR;
+
+let provider, signer, me, bagi, usdc, registry;
+const $ = id => document.getElementById(id);
+const say = (msg, cls="") => { const s=$("status"); s.textContent=msg; s.className=cls; };
+const fmt = v => ethers.formatUnits(v, USDC_DECIMALS);
+
+// ---- split parsing (mirrors the contract's rules so we fail before gas) ----
+function parseSplit(text) {
+  const rows = text.split("\n").map(l => l.trim()).filter(Boolean);
+  if (rows.length === 0 || rows.length > 20) throw new Error("Need 1–20 recipients");
+  const recipients = [], bps = [];
+  let sum = 0;
+  for (const row of rows) {
+    const [addr, b] = row.split(",").map(x => x.trim());
+    if (!ethers.isAddress(addr)) throw new Error("Bad address: " + addr);
+    const n = Number(b);
+    if (!Number.isInteger(n) || n <= 0) throw new Error("bps must be a positive integer: " + b);
+    recipients.push(addr); bps.push(n); sum += n;
+  }
+  if (sum !== 10000) throw new Error(`bps sum = ${sum}, must be 10000`);
+  return { recipients, bps };
+}
+
+async function connect() {
+  if (!window.ethereum) return say("No wallet found — install MetaMask.", "err");
+  provider = new ethers.BrowserProvider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
+  try { await window.ethereum.request({ method:"wallet_switchEthereumChain", params:[{chainId:FUJI.chainId}] }); }
+  catch (e) { if (e.code === 4902) await window.ethereum.request({ method:"wallet_addEthereumChain", params:[FUJI] }); }
+  signer = await provider.getSigner();
+  me = await signer.getAddress();
+  bagi = new ethers.Contract(BAGI_ADDR, BAGI_ABI, signer);
+  usdc = new ethers.Contract(USDC_ADDR, ERC20_ABI, signer);
+  registry = new ethers.Contract(REGISTRY_ADDR, REGISTRY_ABI, signer);
+  $("acct").innerHTML = `<code>${me}</code>`;
+  say("Connected.", "ok");
+  loadStats(me);
+  loadCommunity();
+  resolveFromUrl(); // if arrived from the extension deep-link, fill in the creator now
+}
+
+// Read-only resolve works before connecting (uses a plain RPC provider).
+function readProvider() { return new ethers.JsonRpcProvider(FUJI.rpcUrls[0]); }
+
+// Extension deep-links here as ?platform=twitter&username=foo&amount=5 — turn the
+// handle into a creator address via the registry and prefill the tip form.
+async function resolveFromUrl() {
+  const p = new URLSearchParams(location.search);
+  const platform = p.get("platform"), username = p.get("username"), amount = p.get("amount");
+  if (!platform || !username) return;
+  $("tipMemo").value = p.get("context") || "";
+  if (amount) $("tipAmt").value = amount;
+  const banner = $("resolveBanner");
+  banner.style.display = "block";
+  try {
+    const reg = registry || new ethers.Contract(REGISTRY_ADDR, REGISTRY_ABI, readProvider());
+    const addr = await reg.resolve(platform, username);
+    if (addr === ethers.ZeroAddress) {
+      banner.className = "hint err";
+      banner.textContent = `@${username} (${platform}) hasn't registered a wallet yet — ask them to claim their handle below.`;
+    } else {
+      $("tipCreator").value = addr;
+      banner.className = "hint ok";
+      banner.textContent = `Tipping @${username} (${platform}) → ${addr.slice(0,10)}…`;
+    }
+  } catch (e) { banner.className = "hint err"; banner.textContent = err(e); }
+}
+
+async function bindHandle() {
+  try {
+    const platform = $("bindPlatform").value.trim().toLowerCase();
+    const username = $("bindUsername").value.trim();
+    if (!platform || !username) throw new Error("Fill platform and username");
+    say(`Claiming ${platform}:${username}…`);
+    await (await registry.bind(platform, username)).wait();
+    say(`Bound ${platform}:${username} → your wallet. People can now tip you by handle.`, "ok");
+  } catch (e) { say(err(e), "err"); }
+}
+
+async function setSplit() {
+  try {
+    const { recipients, bps } = parseSplit($("split").value);
+    say("Sending setSplit…");
+    const tx = await bagi.setSplit(recipients, bps);
+    await tx.wait();
+    say(`Split set (${recipients.length} recipients).`, "ok");
+    loadStats(me);
+  } catch (e) { say(err(e), "err"); }
+}
+
+async function tip() {
+  try {
+    const creator = $("tipCreator").value.trim();
+    if (!ethers.isAddress(creator)) throw new Error("Bad creator address");
+    const amount = ethers.parseUnits($("tipAmt").value || "0", USDC_DECIMALS);
+    if (amount <= 0n) throw new Error("Amount must be > 0");
+    const allow = await usdc.allowance(me, BAGI_ADDR);
+    if (allow < amount) { say("Approving USDC…"); await (await usdc.approve(BAGI_ADDR, amount)).wait(); }
+    say("Sending tip…");
+    await (await bagi.tip(creator, amount, $("tipMemo").value)).wait();
+    say(`Tipped ${fmt(amount)} USDC.`, "ok");
+    loadStats(me);
+  } catch (e) { say(err(e), "err"); }
+}
+
+async function withdraw() {
+  try { say("Withdrawing…"); await (await bagi.withdraw()).wait(); say("Withdrawn.", "ok"); loadStats(me); }
+  catch (e) { say(err(e), "err"); }
+}
+
+async function loadStats(who) {
+  const addr = who || $("lookup").value.trim() || me;
+  if (!bagi) return say("Connect a wallet first.", "err");
+  if (!ethers.isAddress(addr)) return say("Bad lookup address.", "err");
+  try {
+    const [tin, tout, earned, split] = await Promise.all([
+      bagi.tippedIn(addr), bagi.tippedOut(addr), bagi.earned(addr), bagi.getSplit(addr),
+    ]);
+    $("sIn").textContent = fmt(tin) + " USDC";
+    $("sOut").textContent = fmt(tout) + " USDC";
+    $("sEarned").textContent = fmt(earned) + " USDC";
+    const t = tierFor(Number(fmt(tout)));
+    $("sTier").textContent = t ? `${t.emoji} ${t.name}` : "— (tip to earn a tier)";
+    const [recips, bps] = split;
+    $("sSplit").textContent = recips.length
+      ? recips.map((r,i) => `${r.slice(0,6)}…=${bps[i]/100}%`).join("  ")
+      : "none set";
+  } catch (e) { say(err(e), "err"); }
+}
+
+// ---- subgraph: leaderboard + activity feed (ported from nih's goldsky queries) ----
+async function gql(query) {
+  if (!SUBGRAPH_URL) return null;
+  try {
+    const res = await fetch(SUBGRAPH_URL, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ query }),
+    });
+    if (!res.ok) return null;
+    return (await res.json()).data || null;
+  } catch { return null; }
+}
+const short = a => a.slice(0, 6) + "…" + a.slice(-4);
+// Our subgraph indexes Handle{platform,username} per wallet, so we label leaders directly —
+// no handleId→handle inversion hack (nih needed one because its schema only stored the hash).
+const label = acc => acc.handles && acc.handles.length ? "@" + acc.handles[0].username : short(acc.id);
+
+async function loadCommunity() {
+  if (!SUBGRAPH_URL) return; // cards stay hidden until an endpoint is set
+  $("community").style.display = "block";
+  const data = await gql(`{
+    tippers: accounts(first: 8, orderBy: totalSent, orderDirection: desc, where: {totalSent_gt: "0"}) {
+      id totalSent tipsSent handles { platform username } }
+    creators: accounts(first: 8, orderBy: totalReceived, orderDirection: desc, where: {totalReceived_gt: "0"}) {
+      id totalReceived tipsReceived handles { platform username } }
+    tips(first: 12, orderBy: timestamp, orderDirection: desc) {
+      from { id handles { username } } creator { id handles { username } } amount memo timestamp txHash }
+  }`);
+  if (!data) { $("community").innerHTML = `<h2>Community</h2><p class="hint err">Subgraph unreachable at <code>${SUBGRAPH_URL}</code>.</p>`; return; }
+  const row = (l, r) => `<div class="stat"><span>${l}</span><b>${r}</b></div>`;
+  const tippers = data.tippers.map(a => row(`${tierFor(Number(fmt(a.totalSent)))?.emoji || ""} ${label(a)}`, fmt(a.totalSent) + " USDC")).join("") || `<p class="hint">no tips yet</p>`;
+  const creators = data.creators.map(a => row(label(a), fmt(a.totalReceived) + " USDC")).join("") || `<p class="hint">no tips yet</p>`;
+  const feed = data.tips.map(t => {
+    const from = t.from.handles?.[0] ? "@" + t.from.handles[0].username : short(t.from.id);
+    const to = t.creator.handles?.[0] ? "@" + t.creator.handles[0].username : short(t.creator.id);
+    return `<div class="stat"><span>${from} → ${to}${t.memo ? ` · <i>${t.memo}</i>` : ""}</span><b>${fmt(t.amount)} USDC</b></div>`;
+  }).join("") || `<p class="hint">no tips yet</p>`;
+  $("lbTippers").innerHTML = tippers;
+  $("lbCreators").innerHTML = creators;
+  $("feed").innerHTML = feed;
+}
+
+function err(e) { return e?.reason || e?.shortMessage || e?.message || String(e); }
+
+$("connect").onclick = connect;
+$("setSplit").onclick = setSplit;
+$("tip").onclick = tip;
+$("withdraw").onclick = withdraw;
+$("bind").onclick = bindHandle;
+$("refresh").onclick = () => loadStats(null);
+
+// If the page was opened from the extension before connecting, resolve immediately (read-only).
+if (new URLSearchParams(location.search).get("username")) resolveFromUrl();
+loadCommunity(); // leaderboard/feed are read-only — show them before connecting too
+</script>
+</body>
+</html>

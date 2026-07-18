@@ -1,0 +1,34 @@
+type Account @entity {
+  id: Bytes! # address
+  totalSent: BigInt! # gross USDC this account has tipped
+  totalReceived: BigInt! # net USDC routed to this account as a creator (matches on-chain tippedIn)
+  tipsSent: BigInt!
+  tipsReceived: BigInt!
+  handles: [Handle!]! @derivedFrom(field: "wallet")
+  sent: [Tip!]! @derivedFrom(field: "from")
+  received: [Tip!]! @derivedFrom(field: "creator")
+}
+
+# One row per tip — powers the activity feed.
+type Tip @entity(immutable: true) {
+  id: Bytes!
+  from: Account!
+  creator: Account!
+  amount: BigInt!
+  fee: BigInt!
+  memo: String!
+  txHash: Bytes!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+}
+
+# Social handle → wallet directory, from HandleRegistry.Bound/Released.
+# ponytail: split configs aren't indexed here — the dashboard reads getSplit() via RPC,
+# so there's nothing to gain from re-indexing the uint16[] arrays.
+type Handle @entity {
+  id: Bytes! # handleId = keccak256(platform ":" username)
+  platform: String!
+  username: String!
+  wallet: Account # null once released
+  boundAt: BigInt!
+}

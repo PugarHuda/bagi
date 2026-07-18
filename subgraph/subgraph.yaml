@@ -1,0 +1,48 @@
+specVersion: 1.0.0
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: Bagi
+    network: avalanche-fuji
+    source:
+      address: "0xDea6Da93265871d828B20cace2BADd5F5e70209d"
+      abi: Bagi
+      startBlock: 56965442
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Account
+        - Tip
+      abis:
+        - name: Bagi
+          file: ./abis/Bagi.json
+      eventHandlers:
+        - event: Tipped(indexed address,indexed address,uint256,uint256,string)
+          handler: handleTipped
+      file: ./src/mapping.ts
+  - kind: ethereum
+    name: HandleRegistry
+    network: avalanche-fuji
+    source:
+      address: "0x481fE34ed995603abdB9998b7eCc8811e2707d87"
+      abi: HandleRegistry
+      startBlock: 56965683
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Handle
+        - Account
+      abis:
+        - name: HandleRegistry
+          file: ./abis/HandleRegistry.json
+      eventHandlers:
+        - event: Bound(indexed bytes32,indexed address,string,string)
+          handler: handleBound
+        - event: Released(indexed bytes32,indexed address)
+          handler: handleReleased
+      file: ./src/mapping.ts

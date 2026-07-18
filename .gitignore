@@ -1,0 +1,26 @@
+# secrets — never commit
+.env
+**/.env
+**/.env.*
+!**/.env.example
+
+# foundry
+**/cache/
+**/out/
+**/broadcast/**/dry-run/
+contracts/foundry.lock
+
+# node
+**/node_modules/
+
+# subgraph build artifacts
+subgraph/build/
+subgraph/generated/
+
+# plasmo / extension build
+extension/build/
+extension/.plasmo/
+
+# misc
+*.log
+.DS_Store
